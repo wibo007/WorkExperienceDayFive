@@ -1,0 +1,252 @@
+﻿@page "/counter"
+
+<PageTitle>Counter</PageTitle>
+
+@* strong means that the text is in bold *@
+<h1 color:"lightblue"><strong>Paint Calculator</strong></h1>
+<h6><strong><em>See ;below for recommended paint prices</em></strong></h6>
+@* larger the number, smaller the text. h6 = normal base text *@
+<h5> Enter your room's dimensions: </h5> 
+
+<strong><p role="status"> @outputError</p></strong>
+
+<p> </p>
+Enter the height of your room:
+@* bind-value means that user input is bound to the inputHeight variable *@
+<input type="text" @bind-value="inputHeight">
+@* the p means that it is a new paragraph *@
+<p> </p>
+Enter the width of your room:
+<input type="text" @bind-value="inputWidth">
+
+<p></p>
+
+Enter the length of your room:
+<input type="text" @bind-value="inputLength">
+<p></p>
+
+Enter the no of windows:
+<input type="text" @bind-value="inputWindows">
+<p></p>
+
+Enter the price per can:
+<input type="text" @bind-value="inputPrice" />
+<p></p>
+
+Enter the capacity of your cans:
+<input type="text" @bind-value="inputCapacity" />
+<p></p>
+@* a way to output your variables. need to @ sign to show that it is a variable*@
+<p role="status"> Number of cans needed: @noCans </p>
+
+<p role="status"> Price: £@price </p>
+
+@* when the button is pressed, it calls the PaintCalculator method *@
+
+@* <img src="Diagram.png" alt="Image Dimensions" /> *@
+
+<p> <button class="btn btn-primary" @onclick="PaintCalculator">Calculate</button> </p>
+
+@* <p> <button class="btn btn-primary" @onclick="addToFile">Submit Details</button> </p>
+ *@
+
+
+@* using newly learnt html to create a table *@
+<div>
+    @* could do <table border="1"> which would only outline outer lines *@
+    <table class="table-bordered">
+        @* tr ==> table row *@
+         <tr> 
+             @* th ==> table header *@
+             <th><strong>Paint Name </strong></th>
+             <th><strong>Paint Capacity</strong></th>
+             <th><strong>Paint Price</strong></th>
+         </tr>
+         <tr>
+             @* td ==> table data *@
+            <td>Dulux Easycare Egyptian</td>
+            <td>5l</td>
+            <td>£42</td>
+         </tr>
+         <tr>
+            <td>Dulux Quick dry Pure</td>
+            <td>2.5l</td>
+            <td>£28</td>
+         </tr>
+         <tr >
+            <td>Dulux Egyptian cotton Silk</td>
+            <td>5l</td>
+            <td>£36</td>
+         </tr>
+         <tr>
+            <td>Farrow & Ball Modern Breakfast</td>
+            <td>2.5l</td>
+            <td>£59</td>
+         </tr>
+         <tr>
+            <td>Leyland Pure brilliant whit</td>
+            <td>10l</td>
+            <td>16</td>
+         </tr>
+    </table>
+</div>
+
+
+
+@code
+{
+    //intialising variables
+    //variables are priv for security reason --> user cannot access/change any values
+    private double inputHeight;
+    private double inputWidth;
+    private double inputLength;
+    private double inputWindows;
+    private double inputPrice;
+    private double inputCapacity;
+    private double noCans;
+    private string outputError;
+    private double price;
+    private double paintCapacity;
+    // private string EM;
+    //good practice/is convention to use constants and comment what they are doing
+    //random numbers w/out a constant declaration sometimes called 'magic numbers'
+    //declaring and initialising constants
+    //constant for the window's length
+    public const double winLengh = 0.635;
+    //constant for the window's width
+    public const double winWidth = 0.89;
+    //constant for the door's length
+    public const double drLength = 0.762;
+    //constant for the door's width
+    public const double drWidth = 1.981;
+
+    private void PaintCalculator()
+    {
+        //checks that the paint capacity input is valid
+        //could do (0 == paint capacity) as a more defensive way of programming
+        if (paintCapacity == 0)
+        {
+            outputError = "Please make sure that all values are non-zero";
+        }
+        
+            outputError = "";
+            //creates the object r from class room
+            Room r = new Room();
+            //gets variable surfaceAreaFinal from the SurfaceAreaCalculator method in the Room class
+            double ans = r.SurfaceAreaCalculator(inputWidth, inputHeight, inputLength, inputWindows);
+            //creates the object paintCalc from the Paint class
+            Paint p = new Paint();
+            //creates variables noCans and price for class methods paintCanNoCalculator and TotalPrice
+            //5 = assuming 5l can of paint
+            //28 = assuming price is £28
+            noCans = p.paintCanNoCalculator(ans, inputCapacity);
+            price = p.TotalPrice(inputPrice, noCans);
+        
+
+    }
+
+    private void addToFile()
+    {
+        // we have no clue but we're pretty sure that is is because we don't have permission to create a file?
+        // code does work however on the CSVPractice file so refer to that for working code
+        var listOfInputs = new List<holdValues>
+        {
+            new holdValues {fHeight = inputHeight, fWidth = inputWidth}
+        };
+
+        string fileName = @"C:\Users\WillowBond\source\repos\PaintCalculatorApp\values.csv";
+
+        using(var files = new StreamWriter(fileName))
+        {
+            files.WriteLine("Height, Width");
+
+
+            foreach (var value in listOfInputs)
+            {
+                files.WriteLine($"{value.fHeight},{value.fWidth}");
+            }
+        }
+
+        outputError = "converted to file";
+    }
+
+
+
+    class Paint
+    {
+
+        //these variables are linked to the html code so need to be
+        //declared outside of the classes
+        private double paintCapacity;
+        private double pricePerCan;
+        private double noOfCans;
+        private double price;
+        private double totalVolumeNeeded;
+
+        public double paintCanNoCalculator(double ans, double paintCapacity)
+        {
+            //converts the m to cm and persumes you will need two coats of paint. then divides to get from ml to l
+            totalVolumeNeeded = (((ans * 100) * 2) / 1000);
+            if (totalVolumeNeeded < paintCapacity)
+            {
+                noOfCans = 1;
+            }
+            else
+            {
+                //rounds up to the whole no of cans needed
+                noOfCans = Convert.ToInt32(Math.Ceiling(totalVolumeNeeded / paintCapacity));
+            }
+            //more efficent code as it only has 1 return statement (could have 1 at end of each branch)
+            return noOfCans;
+        }
+
+        public double TotalPrice(double pricePerCan, double noOfCans)
+        {
+            price = pricePerCan * noOfCans;
+            return price;
+
+        }
+
+    }
+    class Walls
+    {
+        //these are the attributes of a class
+        private double length;
+        private double width;
+        private double area;
+
+        //this would be the method(s) of a class
+        public double Area(double length, double width)
+        {
+            area = length = width;
+            return area;
+        }
+    }
+
+    //child class room is inherited from parent class walls
+    //this means that the attributes from the parent class (walls) are already in the child class
+    class Room : Walls
+    {
+        //new attributes needed for the class, but do not need to re-state the ones from the parent class
+        private double height;
+        public double surfaceArea;
+        //as surface area is being used in a differnet class it must be left public
+        //otherwise you will gain an error and surfaceAreaCalaculator method cannot be called
+        public double windowNo;
+
+        //see method calls both the child and parent attributes w/out error
+        public double SurfaceAreaCalculator(double width, double height, double length, double windowNo)
+        {
+            surfaceArea = ((length * height) * 2) + ((width * height) * 2) + ((width * length) * 2);
+            surfaceArea = surfaceArea - (windowNo * (winLengh * winWidth)) - (drLength * drWidth);
+            return surfaceArea;
+        }
+    }
+
+    class holdValues
+    {
+        public double fHeight { get ; set; }
+        public double fWidth { get; set; }
+    }
+
+}
